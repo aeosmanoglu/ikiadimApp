@@ -1,16 +1,20 @@
 {
-  "name": "ikiadimapp",
-  "version": "1.0.0",
-  "description": "2FA generator web app",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "Abuzer Emre Osmanoglu",
-  "license": "ISC",
-  "dependencies": {
-    "bootstrap": "^5.1.3",
-    "express": "^4.17.1",
-    "pug": "^3.0.2"
-  }
+    "name": "ikiadimapp",
+    "version": "1.0.0",
+    "description": "2FA generator web app",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "nodemon app.js"
+    },
+    "author": "Abuzer Emre Osmanoglu",
+    "license": "ISC",
+    "dependencies": {
+        "bootstrap": "^5.1.3",
+        "express": "^4.17.1",
+        "pug": "^3.0.2"
+    },
+    "devDependencies": {
+        "nodemon": "^2.0.14"
+    }
 }

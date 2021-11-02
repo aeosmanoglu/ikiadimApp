@@ -1,0 +1,60 @@
+doctype html
+head
+  meta(charset='UTF-8')
+  meta(http-equiv='X-UA-Compatible' content='IE=edge')
+  meta(name='viewport' content='width=device-width, initial-scale=1.0')
+  meta(name='author' content='Abuzer Emre Osmanoğlu')
+  link(rel='stylesheet' href='scss/custom.css')
+  link(rel='apple-touch-icon' sizes='57x57' href='assets/favicon/apple-icon-57x57.png')
+  link(rel='apple-touch-icon' sizes='60x60' href='assets/favicon/apple-icon-60x60.png')
+  link(rel='apple-touch-icon' sizes='72x72' href='assets/favicon/apple-icon-72x72.png')
+  link(rel='apple-touch-icon' sizes='76x76' href='assets/favicon/apple-icon-76x76.png')
+  link(rel='apple-touch-icon' sizes='114x114' href='assets/favicon/apple-icon-114x114.png')
+  link(rel='apple-touch-icon' sizes='120x120' href='assets/favicon/apple-icon-120x120.png')
+  link(rel='apple-touch-icon' sizes='144x144' href='assets/favicon/apple-icon-144x144.png')
+  link(rel='apple-touch-icon' sizes='152x152' href='assets/favicon/apple-icon-152x152.png')
+  link(rel='apple-touch-icon' sizes='180x180' href='assets/favicon/apple-icon-180x180.png')
+  link(rel='icon' type='image/png' sizes='192x192' href='assets/favicon/android-icon-192x192.png')
+  link(rel='icon' type='image/png' sizes='32x32' href='assets/favicon/favicon-32x32.png')
+  link(rel='icon' type='image/png' sizes='96x96' href='assets/favicon/favicon-96x96.png')
+  link(rel='icon' type='image/png' sizes='16x16' href='assets/favicon/favicon-16x16.png')
+  link(rel='manifest' href='assets/favicon/manifest.json')
+  meta(name='msapplication-TileColor' content='#ffffff')
+  meta(name='msapplication-TileImage' content='assets/favicon/ms-icon-144x144.png')
+  meta(name='theme-color' content='#ffffff')
+  title &Idot;ki Ad&imath;m Do&gbreve;rulama
+.container.my-5
+  .row.row-cols-1.row-cols-md-2.g-5
+    .col
+      .row.row-cols-1.g-1
+        .col
+          p.display-6
+            | Merhaba,
+            br
+            | Say&imath;n 
+            span#name.fw-bold Abuzer Emre O.
+        .col
+          p.lead
+            | &Scedil;imdi kendinize &ouml;zel bir anahtar &uuml;retin ve cep telefonunuzdaki 
+            strong
+              | &quot;&Idot;ki
+              | Ad&imath;m&quot;
+            |  uygulamas&imath; ile QR kodu kameraya okutun.
+        .col
+          button.btn.btn-large.btn-primary.px-5.py-1(type='submit') &Uuml;ret
+    canvas#qr.col.mb-5.px-5
+footer.container.fixed-bottom.small.text-muted.p-2.text-center
+  span#name Abuzer Emre O.
+  |  de&gbreve;il misiniz?
+  button#logout.btn.btn-sm.btn-outline-danger
+    | &Ccedil;&imath;k&imath;&scedil; yap.
+script(src='/node_modules/qrious/dist/qrious.min.js')
+script.
+  (function () {
+  var qr = new QRious({
+  element: document.getElementById('qr'),
+  value: 'otpauth://totp/Jandarma?secret=JBSWY3DPEHPK3PXP',
+  size: 500,
+  backgroundAlpha: 0,
+  });
+  })();
