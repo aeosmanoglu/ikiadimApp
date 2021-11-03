@@ -1,3 +1,5 @@
 Rename this folder to '.env'
 
 PORT=3000
+LDAP_BASE_DN="dc=example,dc=com"
+LDAP_URL="ldap://ldap.forumsys.com"
