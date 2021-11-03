@@ -1,0 +1,52 @@
+@import "../node_modules/bootstrap/scss/functions";
+// Global Configuration
+$spacer: 1rem;
+$spacers: (
+    0: 0,
+    1: $spacer,
+    2: $spacer * 2,
+    3: $spacer * 3,
+    4: $spacer * 4,
+    5: $spacer * 5,
+);
+$enable-rounded: false;
+$enable-shadows: true;
+// Color Configuration
+$white: #fff;
+$gray-100: #f8f9fa;
+$gray-200: #e9ecef;
+$gray-300: #dee2e6;
+$gray-400: #ced4da;
+$gray-500: #adb5bd;
+$gray-600: #6c757d;
+$gray-700: #495057;
+$gray-800: #343a40;
+$gray-900: #212529;
+$light: $gray-100;
+$gray: $gray-600;
+$gray-dark: $gray-800;
+$dark: $gray-900;
+$blue: #0f62fe;
+$red: #da1e28;
+$green: #24a148;
+$yellow: #f1c21b;
+$body-bg: $gray-100;
+// Rest of Configuration
+@import "../node_modules/bootstrap/scss/variables";
+@import "../node_modules/bootstrap/scss/mixins";
+@import "../node_modules/bootstrap/scss/utilities";
+// Layout & components
+@import "../node_modules/bootstrap/scss/root";
+@import "../node_modules/bootstrap/scss/reboot";
+@import "../node_modules/bootstrap/scss/type";
+@import "../node_modules/bootstrap/scss/containers";
+@import "../node_modules/bootstrap/scss/grid";
+@import "../node_modules/bootstrap/scss/forms";
+@import "../node_modules/bootstrap/scss/buttons";
+@import "../node_modules/bootstrap/scss/helpers";
+// Utilities
+@import "../node_modules/bootstrap/scss/utilities/api";
+// Additional custom code here
+footer {
+    background-color: $gray-200;
+}
