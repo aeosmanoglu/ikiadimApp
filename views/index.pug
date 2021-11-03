@@ -21,7 +21,7 @@ head
 						|  uygulaması ile QR kodu kameraya okutun.
 					p.lead 3. Mutlaka çıkış yapın.
 				.col
-					form(action="/", method="post")
+					form(action="/home", method="post")
 						if isQRGenerated
 							button.btn.btn-large.btn-danger.px-5.py-1(type='submit') Çıkış Yap
 						else

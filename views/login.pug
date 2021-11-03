@@ -4,14 +4,14 @@ head
 	link(rel='stylesheet' href='login.css')
 	title Giriş - İki Adım Doğrulama
 main.form-signin.m-auto.p-1.text-center
-	form
+	form(action="/", method="post")
 		img.mb-2(src='AppIcon.png' width='144' height='144')
 		h1.mb-3.display-6 İki Adım Doğrulama
 		.form-floating
-			input#floatingInput.form-control(type='text' placeholder='Username')
+			input#floatingInput.form-control(type='text' placeholder='Username' name='id' required)
 			label(for='floatingInput') Kullanıcı Adı
 		.form-floating
-			input#floatingPassword.form-control(type='password' placeholder='Password')
+			input#floatingPassword.form-control(type='password' placeholder='Password' name='password' required)
 			label(for='floatingPassword') Parola
 		button.w-100.btn.btn-lg.btn-primary.mt-1.mb-2(type='submit') Giriş
-		p.text-danger Kullanıcı Adı veya Parola Hatalı
+		p.text-danger= message
