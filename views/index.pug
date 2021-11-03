@@ -1,4 +1,4 @@
-- var name = "Abuzer Emre O.";
+- var name = "Hasan M.";
 
 doctype html
 head
@@ -9,32 +9,29 @@ head
 		.col
 			.row.row-cols-1.g-1
 				.col
-					p.display-5
+					p.display-4
 						| Merhaba,
 						br
 						| Sayın 
 						span.fw-bold #{name}
 				.col
-					p.lead Kendinize özel bir anahtar üretin. Telefonunuzdaki
-						strong
-							|  "İki Adım"
+					p.lead 1. Kendinize özel bir anahtar üretin.
+					p.lead 2.
+						strong.fw-bold  "İki Adım"
 						|  uygulaması ile QR kodu kameraya okutun.
+					p.lead 3. Mutlaka çıkış yapın.
 				.col
-					button.btn.btn-large.btn-primary.px-5.py-1(type='submit') Üret
-
-		canvas#qr.col.mb-5.px-5
+					form(action="/", method="post")
+						if isQRGenerated
+							button.btn.btn-large.btn-danger.px-5.py-1(type='submit') Çıkış Yap
+						else
+							button.btn.btn-large.btn-primary.px-5.py-1(type='submit') Üret
+		if isQRGenerated
+			img(src=src).col.mb-5.px-5.img-fluid
+		else
+			.col
 footer.container.fixed-bottom.small.text-muted.p-2.text-center
 	span #{name}
 	|	değil misiniz? 
 	button#logout.btn.btn-sm.btn-outline-danger
 		| Çıkış yap.
-script(src='/qrious/dist/qrious.min.js')
-script.
-	(function () {
-	var qr = new QRious({
-	element: document.getElementById('qr'),
-	value: 'otpauth://totp/Jandarma?secret=JBSWY3DPEHPK3PXP',
-	size: 500,
-	backgroundAlpha: 0,
-	});
-	})();
