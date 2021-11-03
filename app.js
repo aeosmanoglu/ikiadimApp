@@ -2,14 +2,12 @@ const express = require("express");
 const app = express();
 const { authenticator } = require("@otplib/preset-default");
 const qr = require("qrcode");
-const bodyParser = require("body-parser");
 const cookieSession = require("cookie-session");
 const passport = require("passport");
 const CustomStrategy = require("passport-custom").Strategy;
 const { authenticate } = require("ldap-authentication");
 const dotenv = require("dotenv");
 dotenv.config();
-const port = process.env.PORT;
 var isQRGenerated = false;
 
 // Create the passport custom stragegy and name it `ldap`
@@ -62,7 +60,7 @@ var sessionMiddleWare = cookieSession({
 });
 
 // The order of the following middleware is very important for passport!!
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
 app.use(sessionMiddleWare);
 app.use(passport.initialize());
 app.use(passport.session());
@@ -133,6 +131,4 @@ app.get("/", function (req, res) {
 //     );
 // });
 
-app.listen(port, () => {
-    console.log("App listening at http://localhost:" + port);
-});
+module.exports = app;
