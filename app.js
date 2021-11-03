@@ -1,8 +1,10 @@
-const { authenticator } = require("@otplib/preset-default");
 const express = require("express");
 const app = express();
+const { authenticator } = require("@otplib/preset-default");
 const qr = require("qrcode");
-const port = 3000;
+const dotenv = require("dotenv");
+dotenv.config();
+const port = process.env.PORT;
 var isQRGenerated = false;
 
 app.set("view engine", "pug");

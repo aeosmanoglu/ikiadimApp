@@ -1,0 +1,3 @@
+Rename this folder to '.env'
+
+PORT=3000
