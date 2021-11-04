@@ -8,7 +8,7 @@ main.form-signin.m-auto.p-1.text-center
 		img.mb-2(src='AppIcon.png' width='144' height='144')
 		h1.mb-3.display-6 İki Adım Doğrulama
 		.form-floating
-			input#floatingInput.form-control(type='text' placeholder='Username' name='id' autocomplete='username' required autofocus)
+			input#floatingInput.form-control(type='text' placeholder='Username' name='id' autocomplete='username' pattern="\d{7}" required autofocus)
 			label(for='floatingInput') Kullanıcı Adı
 		.form-floating
 			input#floatingPassword.form-control(type='password' placeholder='Password' name='password' autocomplete='current-password' required)

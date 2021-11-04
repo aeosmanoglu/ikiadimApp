@@ -10,13 +10,21 @@ const dotenv = require("dotenv");
 dotenv.config();
 var isQRGenerated = false;
 
+// TODO: Unit test this func with Jest
+function isValidID(id) {
+    regex = new RegExp(/^\d{7}$/);
+    return regex.test(id);
+}
+
 // Create the passport custom stragegy and name it `ldap`
 passport.use(
     "ldap",
     new CustomStrategy(async function (req, done) {
         try {
-            if (!req.body.id || !req.body.password) {
-                throw new Error("username and password are not provided");
+            if (!req.body.id || !req.body.password || !isValidID(req.body.id)) {
+                throw new Error(
+                    "username and password are not provided or valid"
+                );
             }
             // construct the parameter to pass in authenticate() function
             let ldapBaseDn = process.env.LDAP_BASE_DN;
@@ -67,10 +75,6 @@ app.use(passport.session());
 app.use(express.static("public"));
 
 app.set("view engine", "pug");
-
-app.get("*", (req, res) => {
-    res.render("login");
-});
 
 // user post username and password
 app.post(
@@ -130,5 +134,7 @@ app.get("/", function (req, res) {
 //         }
 //     );
 // });
+
+// TODO: redirect to other views to "/""
 
 module.exports = app;
