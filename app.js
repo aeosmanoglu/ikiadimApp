@@ -21,9 +21,8 @@ function now() {
     return today.toString();
 }
 
-const db = require("./app/models");
+const db = require("./models");
 const DataModel = db.datas;
-// const dataModel = require("./app/models/data.model");
 db.mongoose
     .connect(db.url, {
         useNewUrlParser: true,
@@ -119,6 +118,35 @@ app.post("/create", (req, res) => {
         })
         .catch(error => console.error(error));
 
+});
+
+app.get("/api/check", (res, req) => {
+    DataModel.find({ pbik: res.query.id })
+        .then(data => {
+            let serverKey = process.env.KEY;
+            let serverCode = authenticator.generate(data[0].key);
+            let userKey = res.query.key;
+            let userCode = res.query.code;
+            const ip = res.headers['x-forwarded-for'] || res.socket.remoteAddress;
+
+            if (userKey != serverKey) {
+                req.statusCode = 400;
+                req.statusMessage = "NOT OK";
+                return req.send();
+            } else if (serverCode != userCode) {
+                console.log("CHCKED: " + ip + " - " + res.query.id + " - " + now() + " - " + false);
+                return req.send({ "id": res.query.id, "status": false });
+            } else {
+
+                console.log("CHCKED: " + ip + " - " + res.query.id + " - " + now() + " - " + true);
+                return req.send({ "id": res.query.id, "status": true });
+            }
+        })
+        .catch(error => {
+            req.statusCode = 500;
+            req.statusMessage = "Database Error";
+            return console.error(error);
+        });
 });
 
 module.exports = app;
