@@ -7,29 +7,39 @@ head
 		.col
 			.row.row-cols-1.g-1
 				.col
-					p.display-4
-						| Merhaba,
-						br
-						| Sayın 
-						span.fw-bold=name
-				.col
-					p.lead 1. Kendinize özel bir anahtar üretin.
-					p.lead 2.
-						strong.fw-bold  "İki Adım"
-						|  uygulaması ile QR kodu kameraya okutun.
-					p.lead 3. Mutlaka çıkış yapın.
-				.col
 					if isQRGenerated
-						a.btn.btn-large.btn-danger.px-5.py-1(href="/logout") Çıkış Yap
-					else
+						p.display-4.text-center Teşekkürler
+					else 
+						p.display-4
+							| Merhaba,
+							br
+							| Sayın 
+							span.fw-bold=name
+				.col
+					if !isQRGenerated
+						p.lead 1. Kendinize özel bir anahtar üretin.
+						p.lead 2.
+							strong.fw-bold  "İki Adım"
+							|  uygulaması ile QR kodu kameraya okutun.
+			
+				if isQRGenerated
+					.col.d-flex.justify-content-center
+							a.btn.btn-large.btn-danger.px-5.py-1(href="/logout") Çıkış Yap
+					.col
+						p.text-muted.text-center Mutlaka çıkış yapın.
+				else
+					.col
 						form(action="/create", method="post") 
 							button.btn.btn-large.btn-primary.px-5.py-1(type='submit') Üret
+					.col
+						p.text-muted Daha önce anahtar ürettiyseniz, silinecektir.
 		if isQRGenerated
 			img(src=src).col.mb-5.px-5.img-fluid
 		else
 			.col
-footer.container.fixed-bottom.small.text-muted.p-2.text-center
-	span=name
-	|	değil misiniz? 
-	a.btn.btn-sm.btn-outline-danger(href="/logout")
-		| Çıkış yap.
+if !isQRGenerated
+	footer.container.fixed-bottom.small.text-muted.p-2.text-center
+		span=name
+		|	değil misiniz? 
+		a.btn.btn-sm.btn-outline-danger(href="/logout")
+			| Çıkış yap.
