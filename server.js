@@ -1,3 +1,5 @@
+/*jshint esversion: 8 */
+
 const app = require("./app");
 const dotenv = require("dotenv");
 dotenv.config();

@@ -1,5 +1,3 @@
-- var name = "Hasan M.";
-
 doctype html
 head
 	include includes/head.pug
@@ -13,7 +11,7 @@ head
 						| Merhaba,
 						br
 						| Sayın 
-						span.fw-bold #{name}
+						span.fw-bold=name
 				.col
 					p.lead 1. Kendinize özel bir anahtar üretin.
 					p.lead 2.
@@ -31,7 +29,7 @@ head
 		else
 			.col
 footer.container.fixed-bottom.small.text-muted.p-2.text-center
-	span #{name}
+	span=name
 	|	değil misiniz? 
 	a.btn.btn-sm.btn-outline-danger(href="/logout")
 		| Çıkış yap.

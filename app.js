@@ -1,23 +1,14 @@
-/* EXPRESS */
+/*jshint esversion: 8 */
+
 const express = require("express");
 const app = express();
-
-const { authenticator } = require("@otplib/preset-default"); // for Secret Key generation
-const qr = require("qrcode"); // for QR Code generation
-
-/* PASSPORT */
-const cookieSession = require('cookie-session')
-const passport = require('passport')
-const CustomStrategy = require('passport-custom').Strategy
-const { authenticate } = require('ldap-authentication')
-
-/* ENVIROMENT*/
+const { authenticator } = require("@otplib/preset-default");
+const qr = require("qrcode");
+const { authenticate } = require("ldap-authentication");
 const dotenv = require("dotenv");
 dotenv.config();
-
-/* Local variables and functions */
 var isQRGenerated = false;
-var key = authenticator.generateSecret();
+let key = authenticator.generateSecret();
 
 // TODO: Unit test this func with Jest
 function isValidID(id) {
@@ -25,80 +16,44 @@ function isValidID(id) {
     return regex.test(id);
 }
 
-passport.use('ldap', new CustomStrategy(
-    async function(req, done) {
-        try {
-            if (!req.body.id || !req.body.password) {
-                throw new Error('username and password are not provided')
-            }
-
-            let options = {
-                ldapOpts: {
-                    url: process.env.LDAP_URL
-                },
-                adminDn: process.env.ADMIN_DN,
-                adminPassword: process.env.ADMIN_PASSWORD,
-                userDn: "CN=" + req.body.id + process.env.USER_DN,
-                userPassword: req.body.password,
-                userSearchBase: process.env.USER_SEARCH_BASE,
-                usernameAttribute: process.env.USERNAME_ATTR,
-                username: req.body.id,
-            }
-            let user = await authenticate(options)
-            done(null, user)
-        } catch (error) {
-            done(error, null)
-        }
-    }
-))
-
-passport.serializeUser(function(user, done) {
-    done(null, user);
-})
-passport.deserializeUser(function(user, done) {
-    done(null, user);
-})
-
-var sessionMiddleWare = cookieSession({
-    name: 'session',
-    keys: key,
-    maxAge: 60 * 60 * 1000 // 1 hour
-})
-
-/* End of requirements */
-
 app.use(express.urlencoded({ extended: true }));
-app.use(sessionMiddleWare);
-app.use(passport.initialize());
-app.use(passport.session());
 app.use(express.static("public"));
 app.set("view engine", "pug");
 
-app.post('/login',
-    passport.authenticate('ldap', { failureRedirect: '/' }),
-    function(req, res) {
-        res.redirect('/success');
-    }
-)
-
-app.get('/success', (req, res) => {
-    if (req.sessionCookies.keys === key) {
-        res.render('index')
-    } else {
-        res.redirect('/')
-    }
-})
-
-// LOGOUT
-app.get('/logout', (req, res) => {
-    req.logout();
-    res.redirect('/');
-})
-
-// LOGIN
 app.get("/", function(req, res) {
     res.render("login");
 });
+
+app.post('/', async function(res, req) {
+    var user = null;
+    let b = res.body;
+    let options = {
+        ldapOpts: { url: process.env.LDAP_URL },
+        adminDn: process.env.ADMIN_DN,
+        adminPassword: process.env.ADMIN_PASSWORD,
+        userPassword: b.password,
+        userSearchBase: process.env.USER_SEARCH_BASE,
+        usernameAttribute: process.env.USERNAME_ATTR,
+        username: b.id,
+        // starttls: false
+    };
+
+    try {
+        user = await authenticate(options);
+
+    } catch (error) {
+        console.log(error);
+    }
+
+    if (user === null) {
+        req.render("login", { message: "Kullanıcı adı veya parola hatalı." });
+    } else {
+        let name = user.displayName.split(" ");
+        let shortName = name.shift() + " " + name.pop().charAt(0) + ".";
+        req.render('index', { name: shortName });
+    }
+});
+
 
 //////////////////////////////////////////////////////////////////////////
 
