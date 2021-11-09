@@ -19,11 +19,11 @@ head
 						|  uygulaması ile QR kodu kameraya okutun.
 					p.lead 3. Mutlaka çıkış yapın.
 				.col
-					form(action="/home", method="post")
-						if isQRGenerated
-							button.btn.btn-large.btn-danger.px-5.py-1(type='submit') Çıkış Yap
-						else
-							a.btn.btn-large.btn-primary.px-5.py-1(href="/logout") Üret
+					if isQRGenerated
+						a.btn.btn-large.btn-danger.px-5.py-1(href="/logout") Çıkış Yap
+					else
+						form(action="/create", method="post") 
+							button.btn.btn-large.btn-primary.px-5.py-1(type='submit') Üret
 		if isQRGenerated
 			img(src=src).col.mb-5.px-5.img-fluid
 		else
