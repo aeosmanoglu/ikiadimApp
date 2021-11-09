@@ -5,21 +5,15 @@ const app = express();
 const { authenticator } = require("@otplib/preset-default");
 const qr = require("qrcode");
 const { authenticate } = require("ldap-authentication");
+const { encrypt, decrypt } = require("./controllers/crypto");
+const isValidID = require("./controllers/pbik-validator");
+const now = require("./controllers/now");
 const dotenv = require("dotenv");
 dotenv.config();
 var isQRGenerated = false;
 var user = {};
 
-function isValidID(id) {
-    regex = new RegExp(/[1-9][0-9]{6}/);
-    return regex.test(id);
-}
 
-function now() {
-    let timeElapsed = Date.now();
-    let today = new Date(timeElapsed);
-    return today.toString();
-}
 
 const db = require("./models");
 const DataModel = db.datas;
@@ -106,12 +100,14 @@ app.post("/create", (req, res) => {
         }
     );
     console.log("QR GEN: " + user.name + " - " + now());
-    console.debug("SECRET: " + secret);
+
+    let hash = encrypt(secret);
 
     DataModel.findOneAndUpdate({ pbik: parseInt(user.sAMAccountName) }, {
             $set: {
                 pbik: parseInt(user.sAMAccountName),
-                key: secret
+                iv: hash.iv,
+                content: hash.content
             }
         }, {
             upsert: true
@@ -123,8 +119,10 @@ app.post("/create", (req, res) => {
 app.get("/api/check", (res, req) => {
     DataModel.find({ pbik: res.query.id })
         .then(data => {
+            let hash = { iv: data[0].iv, content: data[0].content };
+            let key = decrypt(hash);
             let serverKey = process.env.KEY;
-            let serverCode = authenticator.generate(data[0].key);
+            let serverCode = authenticator.generate(key);
             let userKey = res.query.key;
             let userCode = res.query.code;
             const ip = res.headers['x-forwarded-for'] || res.socket.remoteAddress;

@@ -10,7 +10,8 @@ module.exports = mongoose => {
                 max: 9999999,
                 required: true
             },
-            key: String,
+            iv: String,
+            content: String,
         }, { timestamps: true })
     );
 
