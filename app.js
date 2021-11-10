@@ -118,7 +118,16 @@ app.post("/create", (req, res) => {
 });
 
 app.get("/api/check", (res, req) => {
-    let pbik = shax(res.query.id);
+    let q = res.query;
+    let pbik = "";
+    if (!q.id || !q.code || !q.key) {
+        req.statusCode = 400;
+        req.statusMessage = "Bad Request";
+        return req.send();
+    } else {
+        pbik = shax(res.query.id);
+    }
+
     DataModel.find({ pbik: pbik })
         .then(data => {
             let hash = { iv: data[0].iv, content: data[0].content };
@@ -130,8 +139,8 @@ app.get("/api/check", (res, req) => {
             let ip = res.headers['x-forwarded-for'] || res.socket.remoteAddress;
 
             if (userKey != serverKey) {
-                req.statusCode = 400;
-                req.statusMessage = "NOT OK";
+                req.statusCode = 401;
+                req.statusMessage = "Unauthorized";
                 return req.send();
             } else if (serverCode != userCode) {
                 console.log("CHCKED: " + ip + " - " + res.query.id + " - " + now() + " - " + false);
