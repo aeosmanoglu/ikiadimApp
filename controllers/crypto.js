@@ -1,18 +1,19 @@
 /*jshint esversion: 8 */
 
-const crypto = require("crypto");
-const dotenv = require("dotenv");
+let crypto = require("crypto");
+let sha1 = require('sha1');
+let dotenv = require("dotenv");
 dotenv.config();
 
-const algorithm = 'aes-256-ctr';
-const secretKey = process.env.SECRET_KEY;
-const iv = crypto.randomBytes(16);
+let algorithm = 'aes-256-ctr';
+let secretKey = process.env.SECRET_KEY;
+let iv = crypto.randomBytes(16);
 
-const encrypt = (text) => {
+let encrypt = (text) => {
 
-    const cipher = crypto.createCipheriv(algorithm, secretKey, iv);
+    let cipher = crypto.createCipheriv(algorithm, secretKey, iv);
 
-    const encrypted = Buffer.concat([cipher.update(text), cipher.final()]);
+    let encrypted = Buffer.concat([cipher.update(text), cipher.final()]);
 
     return {
         iv: iv.toString('hex'),
@@ -20,16 +21,21 @@ const encrypt = (text) => {
     };
 };
 
-const decrypt = (hash) => {
+let decrypt = (hash) => {
 
-    const decipher = crypto.createDecipheriv(algorithm, secretKey, Buffer.from(hash.iv, 'hex'));
+    let decipher = crypto.createDecipheriv(algorithm, secretKey, Buffer.from(hash.iv, 'hex'));
 
-    const decrpyted = Buffer.concat([decipher.update(Buffer.from(hash.content, 'hex')), decipher.final()]);
+    let decrpyted = Buffer.concat([decipher.update(Buffer.from(hash.content, 'hex')), decipher.final()]);
 
     return decrpyted.toString();
 };
 
+let sha = (text) => {
+    return sha1(text);
+};
+
 module.exports = {
     encrypt,
-    decrypt
+    decrypt,
+    shax: sha
 };

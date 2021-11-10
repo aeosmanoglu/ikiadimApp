@@ -1,22 +1,22 @@
 /*jshint esversion: 8 */
 
-const express = require("express");
-const app = express();
-const { authenticator } = require("@otplib/preset-default");
-const qr = require("qrcode");
-const { authenticate } = require("ldap-authentication");
-const { encrypt, decrypt } = require("./controllers/crypto");
-const isValidID = require("./controllers/pbik-validator");
-const now = require("./controllers/now");
-const dotenv = require("dotenv");
+let express = require("express");
+let app = express();
+let { authenticator } = require("@otplib/preset-default");
+let qr = require("qrcode");
+let { authenticate } = require("ldap-authentication");
+let { encrypt, decrypt, shax } = require("./controllers/crypto");
+let isValidID = require("./controllers/pbik-validator");
+let now = require("./controllers/now");
+let dotenv = require("dotenv");
 dotenv.config();
 var isQRGenerated = false;
 var user = {};
 
 
 
-const db = require("./models");
-const DataModel = db.datas;
+let db = require("./models");
+let DataModel = db.datas;
 db.mongoose
     .connect(db.url, {
         useNewUrlParser: true,
@@ -45,7 +45,7 @@ app.post('/', async(res, req) => {
     let b = res.body;
     if (!isValidID(b.id)) {
         req.render("login", { message: "what the hack are you doing?" });
-        const ip = res.headers['x-forwarded-for'] || res.socket.remoteAddress;
+        let ip = res.headers['x-forwarded-for'] || res.socket.remoteAddress;
         console.log("HACK  : " + ip + " - " + now());
         return;
     }
@@ -102,10 +102,11 @@ app.post("/create", (req, res) => {
     console.log("QR GEN: " + user.name + " - " + now());
 
     let hash = encrypt(secret);
+    let pbik = shax(user.sAMAccountName);
 
-    DataModel.findOneAndUpdate({ pbik: parseInt(user.sAMAccountName) }, {
+    DataModel.findOneAndUpdate({ pbik: pbik }, {
             $set: {
-                pbik: parseInt(user.sAMAccountName),
+                pbik: pbik,
                 iv: hash.iv,
                 content: hash.content
             }
@@ -117,7 +118,8 @@ app.post("/create", (req, res) => {
 });
 
 app.get("/api/check", (res, req) => {
-    DataModel.find({ pbik: res.query.id })
+    let pbik = shax(res.query.id);
+    DataModel.find({ pbik: pbik })
         .then(data => {
             let hash = { iv: data[0].iv, content: data[0].content };
             let key = decrypt(hash);
@@ -125,7 +127,7 @@ app.get("/api/check", (res, req) => {
             let serverCode = authenticator.generate(key);
             let userKey = res.query.key;
             let userCode = res.query.code;
-            const ip = res.headers['x-forwarded-for'] || res.socket.remoteAddress;
+            let ip = res.headers['x-forwarded-for'] || res.socket.remoteAddress;
 
             if (userKey != serverKey) {
                 req.statusCode = 400;
@@ -135,7 +137,6 @@ app.get("/api/check", (res, req) => {
                 console.log("CHCKED: " + ip + " - " + res.query.id + " - " + now() + " - " + false);
                 return req.send({ "id": res.query.id, "status": false });
             } else {
-
                 console.log("CHCKED: " + ip + " - " + res.query.id + " - " + now() + " - " + true);
                 return req.send({ "id": res.query.id, "status": true });
             }
