@@ -1,12 +1,12 @@
-/*jshint esversion: 8 */
+/*jshint esversion: 6 */
 
-let dotenv = require("dotenv");
+const dotenv = require("dotenv");
 dotenv.config();
 
-let mongoose = require("mongoose");
+const mongoose = require("mongoose");
 mongoose.Promise = global.Promise;
 
-let db = {};
+const db = {};
 db.mongoose = mongoose;
 db.url = process.env.DB_URL;
 db.datas = require("./data.model.js")(mongoose);

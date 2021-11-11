@@ -1,8 +1,12 @@
-/*jshint esversion: 8 */
+/*jshint esversion: 6 */
 
-let now = () => {
-    let timeElapsed = Date.now();
-    let today = new Date(timeElapsed);
+/**
+ *
+ * @returns {string} - current date in format string
+ */
+const now = () => {
+    const timeElapsed = Date.now();
+    const today = new Date(timeElapsed);
     return today.toString();
 };
 

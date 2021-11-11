@@ -1,10 +1,11 @@
-/*jshint esversion: 8 */
+/*jshint esversion: 6 */
 
-let app = require("./app");
-let dotenv = require("dotenv");
+const app = require("./app");
+const dotenv = require("dotenv");
 dotenv.config();
-let port = process.env.PORT;
+const port = process.env.PORT;
 
+// Start the server
 app.listen(port, () => {
     console.log("App listening at http://localhost:" + port);
 });

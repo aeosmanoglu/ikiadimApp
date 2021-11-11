@@ -1,55 +1,52 @@
-/*jshint esversion: 8 */
+/*jshint esversion: 6 */
 
-let express = require("express");
-let app = express();
-let { authenticator } = require("@otplib/preset-default");
-let qr = require("qrcode");
-let { authenticate } = require("ldap-authentication");
-let { encrypt, decrypt, shax } = require("./controllers/crypto");
-let isValidID = require("./controllers/pbik-validator");
-let now = require("./controllers/now");
-let dotenv = require("dotenv");
+const express = require("express");
+const app = express();
+const { authenticator } = require("@otplib/preset-default");
+const qr = require("qrcode");
+const { authenticate } = require("ldap-authentication");
+const { encrypt, decrypt, sha256 } = require("./controllers/crypto");
+const isValidID = require("./controllers/pbik-validator");
+const now = require("./controllers/now");
+const dotenv = require("dotenv");
 dotenv.config();
 var isQRGenerated = false;
 var user = {};
 
+const db = require("./models");
+const DataModel = db.datas;
 
-
-let db = require("./models");
-let DataModel = db.datas;
 db.mongoose
     .connect(db.url, {
         useNewUrlParser: true,
-        useUnifiedTopology: true
+        useUnifiedTopology: true,
     })
     .then(() => {
         console.log("Connected to the database!");
     })
-    .catch(err => {
+    .catch((err) => {
         console.log("Cannot connect to the database!", err);
         process.exit();
-    });
+    }); // connect to database
 
-
-
-
+// app config
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
 app.set("view engine", "pug");
 
-app.get("/", function(req, res) {
+app.get("/", function (req, res) {
     res.render("login");
-});
+}); // login page
 
-app.post('/', async(res, req) => {
-    let b = res.body;
+app.post("/", async (res, req) => {
+    const b = res.body;
     if (!isValidID(b.id)) {
         req.render("login", { message: "what the hack are you doing?" });
-        let ip = res.headers['x-forwarded-for'] || res.socket.remoteAddress;
+        const ip = res.headers["x-forwarded-for"] || res.socket.remoteAddress;
         console.log("HACK  : " + ip + " - " + now());
         return;
     }
-    let options = {
+    const options = {
         ldapOpts: { url: process.env.LDAP_URL },
         adminDn: process.env.ADMIN_DN,
         adminPassword: process.env.ADMIN_PASSWORD,
@@ -62,7 +59,6 @@ app.post('/', async(res, req) => {
 
     try {
         user = await authenticate(options);
-
     } catch (error) {
         console.debug(error);
         req.render("login", { message: "Kullanıcı adı veya parola hatalı." });
@@ -72,23 +68,24 @@ app.post('/', async(res, req) => {
     if (user === {}) {
         req.render("login", { message: "Kullanıcı adı veya parola hatalı." });
     } else {
-        let name = user.givenName;
-        let surname = user.sn.substring(0, 1) + ".";
-        req.render('index', { name: name + " " + surname });
+        const name = user.givenName;
+        const surname = user.sn.substring(0, 1) + ".";
+        req.render("index", { name: name + " " + surname });
         console.log("LOGIN : " + user.name + " - " + now());
     }
-});
+}); // login
 
 app.get("/logout", (res, req) => {
     req.render("login", { message: "Çıkış yapıldı" });
     console.log("LOGOUT: " + user.name + " - " + now());
     user = {};
-});
+}); // logout
 
 app.post("/create", (req, res) => {
-    let secret = authenticator.generateSecret();
+    const secret = authenticator.generateSecret();
     qr.toDataURL(
-        "otpauth://totp/Jandarma?secret=" + secret, {
+        "otpauth://totp/Jandarma?secret=" + secret,
+        {
             errorCorrectionLevel: "H",
             width: 500,
             margin: 0,
@@ -101,60 +98,81 @@ app.post("/create", (req, res) => {
     );
     console.log("QR GEN: " + user.name + " - " + now());
 
-    let hash = encrypt(secret);
-    let pbik = shax(user.sAMAccountName);
+    const hash = encrypt(secret);
+    const pbik = sha256(user.sAMAccountName);
 
-    DataModel.findOneAndUpdate({ pbik: pbik }, {
+    DataModel.findOneAndUpdate(
+        { pbik: pbik },
+        {
             $set: {
                 pbik: pbik,
                 iv: hash.iv,
-                content: hash.content
-            }
-        }, {
-            upsert: true
-        })
-        .catch(error => console.error(error));
-
-});
+                content: hash.content,
+            },
+        },
+        {
+            upsert: true,
+        }
+    ).catch((error) => console.error(error));
+}); // create
 
 app.get("/api/check", (res, req) => {
-    let q = res.query;
-    let pbik = "";
+    const q = res.query;
+    const pbik = "";
     if (!q.id || !q.code || !q.key) {
         req.statusCode = 400;
         req.statusMessage = "Bad Request";
         return req.send();
     } else {
-        pbik = shax(res.query.id);
+        pbik = sha256(res.query.id);
     }
 
     DataModel.find({ pbik: pbik })
-        .then(data => {
-            let hash = { iv: data[0].iv, content: data[0].content };
-            let key = decrypt(hash);
-            let serverKey = process.env.KEY;
-            let serverCode = authenticator.generate(key);
-            let userKey = res.query.key;
-            let userCode = res.query.code;
-            let ip = res.headers['x-forwarded-for'] || res.socket.remoteAddress;
+        .then((data) => {
+            const hash = { iv: data[0].iv, content: data[0].content };
+            const key = decrypt(hash);
+            const serverKey = process.env.KEY;
+            const serverCode = authenticator.generate(key);
+            const userKey = res.query.key;
+            const userCode = res.query.code;
+            const ip =
+                res.headers["x-forwarded-for"] || res.socket.remoteAddress;
 
             if (userKey != serverKey) {
                 req.statusCode = 401;
                 req.statusMessage = "Unauthorized";
                 return req.send();
             } else if (serverCode != userCode) {
-                console.log("CHCKED: " + ip + " - " + res.query.id + " - " + now() + " - " + false);
-                return req.send({ "id": res.query.id, "status": false });
+                console.log(
+                    "CHCKED: " +
+                        ip +
+                        " - " +
+                        res.query.id +
+                        " - " +
+                        now() +
+                        " - " +
+                        false
+                );
+                return req.send({ id: res.query.id, status: false });
             } else {
-                console.log("CHCKED: " + ip + " - " + res.query.id + " - " + now() + " - " + true);
-                return req.send({ "id": res.query.id, "status": true });
+                console.log(
+                    "CHCKED: " +
+                        ip +
+                        " - " +
+                        res.query.id +
+                        " - " +
+                        now() +
+                        " - " +
+                        true
+                );
+                return req.send({ id: res.query.id, status: true });
             }
         })
-        .catch(error => {
+        .catch((error) => {
             req.statusCode = 500;
             req.statusMessage = "Database Error";
             return console.error(error);
         });
-});
+}); // check
 
 module.exports = app;

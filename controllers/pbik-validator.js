@@ -1,6 +1,11 @@
-/*jshint esversion: 8 */
+/*jshint esversion: 6 */
 
-let isValidID = (id = String) => {
+/**
+ *
+ * @param {string} id - id of the element to validate  (required)
+ * @returns {boolean} - true if valid, false if not
+ */
+const isValidID = (id) => {
     if (id.length > 7) {
         return false;
     }
