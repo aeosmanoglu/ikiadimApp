@@ -1,6 +1,6 @@
 /*jshint esversion: 8 */
 
-const isValidID = (id = String) => {
+let isValidID = (id = String) => {
     if (id.length > 7) {
         return false;
     }
