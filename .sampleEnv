@@ -1,6 +1,7 @@
 Rename this folder to '.env'
 
 PORT=1984
+DSN="https://example@sentry.example.com/1"
 LDAP_URL="ldap://example.com"
 ADMIN_DN="CN=admin,DC=example,DC=com,"
 ADMIN_PASSWORD="password"

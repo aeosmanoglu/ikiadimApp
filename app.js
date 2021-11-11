@@ -1,6 +1,8 @@
 /*jshint esversion: 6 */
 
 const express = require("express");
+const Sentry = require("@sentry/node");
+const Tracing = require("@sentry/tracing");
 const app = express();
 const { authenticator } = require("@otplib/preset-default");
 const qr = require("qrcode");
@@ -13,6 +15,20 @@ dotenv.config();
 var isQRGenerated = false;
 var user = {};
 
+// Sentry
+Sentry.init({
+    dsn: process.env.DSN,
+    integrations: [
+        new Sentry.Integrations.Http({ tracing: true }),
+        new Tracing.Integrations.Express({ app }),
+    ],
+    tracesSampleRate: 1.0,
+});
+
+app.use(Sentry.Handlers.requestHandler());
+app.use(Sentry.Handlers.tracingHandler());
+
+// Database
 const db = require("./models");
 const DataModel = db.datas;
 
@@ -34,6 +50,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
 app.set("view engine", "pug");
 
+// routes
 app.get("/", function (req, res) {
     res.render("login");
 }); // login page
@@ -174,5 +191,7 @@ app.get("/api/check", (res, req) => {
             return console.error(error);
         });
 }); // check
+
+app.use(Sentry.Handlers.errorHandler());
 
 module.exports = app;
