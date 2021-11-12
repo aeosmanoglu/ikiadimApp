@@ -1,4 +1,4 @@
-/*jshint esversion: 6 */
+/*jshint esversion: 8 */
 
 const express = require("express");
 const Sentry = require("@sentry/node");
@@ -7,6 +7,7 @@ const app = express();
 const { authenticator } = require("@otplib/preset-default");
 const qr = require("qrcode");
 const { authenticate } = require("ldap-authentication");
+const rateLimit = require('express-rate-limit');
 const { encrypt, decrypt, sha256 } = require("./controllers/crypto");
 const isValidID = require("./controllers/pbik-validator");
 const now = require("./controllers/now");
@@ -45,17 +46,24 @@ db.mongoose
         process.exit();
     }); // connect to database
 
+// set up rate limiter: maximum of five requests per minute
+var limiter = new rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 5
+});
+
 // app config
+app.use(limiter);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
 app.set("view engine", "pug");
 
 // routes
-app.get("/", function (req, res) {
+app.get("/", function(req, res) {
     res.render("login");
 }); // login page
 
-app.post("/", async (res, req) => {
+app.post("/", async(res, req) => {
     const b = res.body;
     if (!isValidID(b.id)) {
         req.render("login", { message: "what the hack are you doing?" });
@@ -101,8 +109,7 @@ app.get("/logout", (res, req) => {
 app.post("/create", (req, res) => {
     const secret = authenticator.generateSecret();
     qr.toDataURL(
-        "otpauth://totp/Jandarma?secret=" + secret,
-        {
+        "otpauth://totp/Jandarma?secret=" + secret, {
             errorCorrectionLevel: "H",
             width: 500,
             margin: 0,
@@ -118,24 +125,20 @@ app.post("/create", (req, res) => {
     const hash = encrypt(secret);
     const pbik = sha256(user.sAMAccountName);
 
-    DataModel.findOneAndUpdate(
-        { pbik: pbik },
-        {
-            $set: {
-                pbik: pbik,
-                iv: hash.iv,
-                content: hash.content,
-            },
+    DataModel.findOneAndUpdate({ pbik: pbik }, {
+        $set: {
+            pbik: pbik,
+            iv: hash.iv,
+            content: hash.content,
         },
-        {
-            upsert: true,
-        }
-    ).catch((error) => console.error(error));
+    }, {
+        upsert: true,
+    }).catch((error) => console.error(error));
 }); // create
 
 app.get("/api/check", (res, req) => {
     const q = res.query;
-    const pbik = "";
+    var pbik = "";
     if (!q.id || !q.code || !q.key) {
         req.statusCode = 400;
         req.statusMessage = "Bad Request";
@@ -162,25 +165,25 @@ app.get("/api/check", (res, req) => {
             } else if (serverCode != userCode) {
                 console.log(
                     "CHCKED: " +
-                        ip +
-                        " - " +
-                        res.query.id +
-                        " - " +
-                        now() +
-                        " - " +
-                        false
+                    ip +
+                    " - " +
+                    res.query.id +
+                    " - " +
+                    now() +
+                    " - " +
+                    false
                 );
                 return req.send({ id: res.query.id, status: false });
             } else {
                 console.log(
                     "CHCKED: " +
-                        ip +
-                        " - " +
-                        res.query.id +
-                        " - " +
-                        now() +
-                        " - " +
-                        true
+                    ip +
+                    " - " +
+                    res.query.id +
+                    " - " +
+                    now() +
+                    " - " +
+                    true
                 );
                 return req.send({ id: res.query.id, status: true });
             }
