@@ -25,7 +25,7 @@ describe("Test ID validator", () => {
         expect(isValidID("12345678")).toBe(false);
     });
     test("Should only digits", () => {
-        expect(isValidID("12E4567")).toBe(false);
+        expect(isValidID("12E45>7")).toBe(false);
     });
 });
 

@@ -49,7 +49,7 @@ db.mongoose
 // set up rate limiter: maximum of five requests per minute
 var limiter = new rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute
-    max: 5
+    max: 60
 });
 
 // app config
