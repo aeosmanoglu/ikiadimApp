@@ -51,6 +51,10 @@ db.mongoose
     }); // connect to database
 // End database setup
 
+// Setting up the helmet middleware
+var helmet = require("helmet");
+app.use(helmet());
+
 // Set up rate limiter: maximum of 60 requests per minute
 const rateLimit = require("express-rate-limit");
 var limiter = new rateLimit({
