@@ -1,22 +1,27 @@
 /*jshint esversion: 8 */
 
+// Importing express
 const express = require("express");
-const Sentry = require("@sentry/node");
-const Tracing = require("@sentry/tracing");
 const app = express();
-const { authenticator } = require("@otplib/preset-default");
+
+// Importing the required modules
+const authenticator = require("@otplib/preset-default");
 const qr = require("qrcode");
-const { authenticate } = require("ldap-authentication");
-const rateLimit = require('express-rate-limit');
 const { encrypt, decrypt, sha256 } = require("./controllers/crypto");
-const isValidID = require("./controllers/pbik-validator");
 const now = require("./controllers/now");
+
+// Set up environment variables
 const dotenv = require("dotenv");
 dotenv.config();
+
+// Setting the global variables
 var isQRGenerated = false;
 var user = {};
 
-// Sentry
+// Sentry error reporting setup (optional)
+// https://sentry.io/ for more info on Sentry error reporting
+const Sentry = require("@sentry/node");
+const Tracing = require("@sentry/tracing");
 Sentry.init({
     dsn: process.env.DSN,
     integrations: [
@@ -25,14 +30,13 @@ Sentry.init({
     ],
     tracesSampleRate: 1.0,
 });
-
 app.use(Sentry.Handlers.requestHandler());
 app.use(Sentry.Handlers.tracingHandler());
+// End Sentry error reporting setup
 
-// Database
+// Database setup
 const db = require("./models");
 const DataModel = db.datas;
-
 db.mongoose
     .connect(db.url, {
         useNewUrlParser: true,
@@ -45,26 +49,30 @@ db.mongoose
         console.log("Cannot connect to the database!", err);
         process.exit();
     }); // connect to database
+// End database setup
 
-// set up rate limiter: maximum of five requests per minute
+// Set up rate limiter: maximum of 60 requests per minute
+const rateLimit = require("express-rate-limit");
 var limiter = new rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute
-    max: 60
+    max: 60,
 });
+app.use(limiter);
+// End rate limiter
 
 // app config
-app.use(limiter);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
 app.set("view engine", "pug");
 
 // routes
-app.get("/", function(req, res) {
+app.get("/", function (req, res) {
     res.render("login");
 }); // login page
 
-app.post("/", async(res, req) => {
+app.post("/", async (res, req) => {
     const b = res.body;
+    const isValidID = require("./controllers/pbik-validator");
     if (!isValidID(b.id)) {
         req.render("login", { message: "what the hack are you doing?" });
         const ip = res.headers["x-forwarded-for"] || res.socket.remoteAddress;
@@ -83,6 +91,7 @@ app.post("/", async(res, req) => {
     };
 
     try {
+        const authenticate = require("ldap-authentication");
         user = await authenticate(options);
     } catch (error) {
         console.debug(error);
@@ -109,7 +118,8 @@ app.get("/logout", (res, req) => {
 app.post("/create", (req, res) => {
     const secret = authenticator.generateSecret();
     qr.toDataURL(
-        "otpauth://totp/Jandarma?secret=" + secret, {
+        "otpauth://totp/Jandarma?secret=" + secret,
+        {
             errorCorrectionLevel: "H",
             width: 500,
             margin: 0,
@@ -125,15 +135,19 @@ app.post("/create", (req, res) => {
     const hash = encrypt(secret);
     const pbik = sha256(user.sAMAccountName);
 
-    DataModel.findOneAndUpdate({ pbik: pbik }, {
-        $set: {
-            pbik: pbik,
-            iv: hash.iv,
-            content: hash.content,
+    DataModel.findOneAndUpdate(
+        { pbik: pbik },
+        {
+            $set: {
+                pbik: pbik,
+                iv: hash.iv,
+                content: hash.content,
+            },
         },
-    }, {
-        upsert: true,
-    }).catch((error) => console.error(error));
+        {
+            upsert: true,
+        }
+    ).catch((error) => console.error(error));
 }); // create
 
 app.get("/api/check", (res, req) => {
@@ -165,25 +179,29 @@ app.get("/api/check", (res, req) => {
             } else if (serverCode != userCode) {
                 console.log(
                     "CHCKED: " +
-                    ip +
-                    " - " +
-                    res.query.id +
-                    " - " +
-                    now() +
-                    " - " +
-                    false
+                        ip +
+                        " - " +
+                        res.query.id +
+                        " - " +
+                        now() +
+                        " - " +
+                        false
                 );
-                return req.send({ id: res.query.id, status: false });
+                const xssFilters = require("xss-filters");
+                return req.send({
+                    id: xssFilters.inHTMLData(res.query.id),
+                    status: false,
+                });
             } else {
                 console.log(
                     "CHCKED: " +
-                    ip +
-                    " - " +
-                    res.query.id +
-                    " - " +
-                    now() +
-                    " - " +
-                    true
+                        ip +
+                        " - " +
+                        res.query.id +
+                        " - " +
+                        now() +
+                        " - " +
+                        true
                 );
                 return req.send({ id: res.query.id, status: true });
             }
