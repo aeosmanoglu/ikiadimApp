@@ -5,7 +5,11 @@
     "main": "app.js",
     "scripts": {
         "test": "jest --forceExit",
-        "start": "nodemon server.js"
+        "dev": "nodemon server.js",
+        "start": "node server.js",
+        "build": "docker-compose build",
+        "up": "docker-compose up -d",
+        "down": "docker-compose down"
     },
     "author": "Abuzer Emre Osmanoglu",
     "license": "ISC",
