@@ -9,6 +9,7 @@ const authenticator = require("@otplib/preset-default");
 const qr = require("qrcode");
 const { encrypt, decrypt, sha256 } = require("./controllers/crypto");
 const now = require("./controllers/now");
+const isValidID = require("./controllers/pbik-validator");
 
 // Set up environment variables
 const dotenv = require("dotenv");
@@ -76,7 +77,6 @@ app.get("/", function (req, res) {
 
 app.post("/", async (res, req) => {
     const b = res.body;
-    const isValidID = require("./controllers/pbik-validator");
     if (!isValidID(b.id)) {
         req.render("login", { message: "what the hack are you doing?" });
         const ip = res.headers["x-forwarded-for"] || res.socket.remoteAddress;
@@ -157,7 +157,7 @@ app.post("/create", (req, res) => {
 app.get("/api/check", (res, req) => {
     const q = res.query;
     var pbik = "";
-    if (!q.id || !q.code || !q.key) {
+    if (!q.code || !isValidID(q.id)) {
         req.statusCode = 400;
         req.statusMessage = "Bad Request";
         return req.send();
@@ -169,18 +169,11 @@ app.get("/api/check", (res, req) => {
         .then((data) => {
             const hash = { iv: data[0].iv, content: data[0].content };
             const key = decrypt(hash);
-            const serverKey = process.env.KEY;
             const serverCode = authenticator.generate(key);
-            const userKey = res.query.key;
             const userCode = res.query.code;
             const ip =
                 res.headers["x-forwarded-for"] || res.socket.remoteAddress;
-
-            if (userKey != serverKey) {
-                req.statusCode = 401;
-                req.statusMessage = "Unauthorized";
-                return req.send();
-            } else if (serverCode != userCode) {
+            if (serverCode != userCode) {
                 console.log(
                     "CHCKED: " +
                         ip +
