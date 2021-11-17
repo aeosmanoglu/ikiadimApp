@@ -27,6 +27,7 @@
         "pug": "^3.0.2",
         "qrcode": "^1.4.4",
         "validator": "^13.7.0",
+        "woodlot": "^3.2.8",
         "xss-filters": "^1.2.7"
     },
     "devDependencies": {

@@ -35,6 +35,19 @@ app.use(Sentry.Handlers.requestHandler());
 app.use(Sentry.Handlers.tracingHandler());
 // End Sentry error reporting setup
 
+// Setting up the logger
+const woodlotCustomLogger = require("woodlot").customLogger;
+const logger = new woodlotCustomLogger({
+    streams: ["./logs/custom.log"],
+    stdout: false,
+    format: {
+        type: "json",
+        options: {
+            compact: false,
+        },
+    },
+});
+
 // Database setup
 const db = require("./models");
 const DataModel = db.datas;
@@ -44,10 +57,10 @@ db.mongoose
         useUnifiedTopology: true,
     })
     .then(() => {
-        console.log("Connected to the database!");
+        logger.debug({ event: "Database connection established" });
     })
     .catch((err) => {
-        console.log("Cannot connect to the database!", err);
+        logger.debug({ event: "Database connection failed", error: err });
         process.exit();
     }); // connect to database
 // End database setup
@@ -76,11 +89,16 @@ app.get("/", function (req, res) {
 }); // login page
 
 app.post("/", async (res, req) => {
+    const ip = res.headers["x-forwarded-for"] || res.socket.remoteAddress;
     const b = res.body;
     if (!isValidID(b.id)) {
         req.render("login", { message: "what the hack are you doing?" });
-        const ip = res.headers["x-forwarded-for"] || res.socket.remoteAddress;
-        console.log("HACK  : " + ip + " - " + now());
+        logger.warn({
+            event: "ID input pattern removed from front-end. Somebody try to hack the system",
+            ip: ip,
+            id: b.id,
+            password: b.password,
+        });
         return;
     }
     const options = {
@@ -98,7 +116,7 @@ app.post("/", async (res, req) => {
         const authenticate = require("ldap-authentication");
         user = await authenticate(options);
     } catch (error) {
-        console.debug(error);
+        logger.error({ error: error, event: "LDAP authentication failed" });
         req.render("login", { message: "Kullanıcı adı veya parola hatalı." });
         return;
     }
@@ -109,17 +127,19 @@ app.post("/", async (res, req) => {
         const name = user.givenName;
         const surname = user.sn.substring(0, 1) + ".";
         req.render("index", { name: name + " " + surname });
-        console.log("LOGIN : " + user.name + " - " + now());
+        logger.info({ event: "User logged in", user: user, ip: ip });
     }
 }); // login
 
 app.get("/logout", (res, req) => {
+    const ip = res.headers["x-forwarded-for"] || res.socket.remoteAddress;
     req.render("login", { message: "Çıkış yapıldı" });
-    console.log("LOGOUT: " + user.name + " - " + now());
+    logger.info({ event: "User logged out", user: user, ip: ip });
     user = {};
 }); // logout
 
 app.post("/create", (req, res) => {
+    const ip = req.headers["x-forwarded-for"] || res.socket.remoteAddress;
     const secret = authenticator.generateSecret();
     qr.toDataURL(
         "otpauth://totp/Jandarma?secret=" + secret,
@@ -134,7 +154,7 @@ app.post("/create", (req, res) => {
             res.render("index", { src, isQRGenerated });
         }
     );
-    console.log("QR GEN: " + user.name + " - " + now());
+    logger.debug({ event: "User requested a new QR code", user: user, ip: ip });
 
     const hash = encrypt(secret);
     const pbik = sha256(user.sAMAccountName);
@@ -151,10 +171,27 @@ app.post("/create", (req, res) => {
         {
             upsert: true,
         }
-    ).catch((error) => console.error(error));
+    )
+        .then(
+            logger.info({
+                event: "User set or update a new secret",
+                user: user,
+                ip: ip,
+                hash: hash,
+            })
+        )
+        .catch((error) =>
+            logger.error({
+                error: error,
+                event: "Database error when update or setting.",
+                user: user,
+                ip: ip,
+            })
+        );
 }); // create
 
 app.get("/api/check", (res, req) => {
+    const ip = res.headers["x-forwarded-for"] || res.socket.remoteAddress;
     const q = res.query;
     var pbik = "";
     if (!q.code || !isValidID(q.id)) {
@@ -171,42 +208,44 @@ app.get("/api/check", (res, req) => {
             const key = decrypt(hash);
             const serverCode = authenticator.generate(key);
             const userCode = res.query.code;
-            const ip =
-                res.headers["x-forwarded-for"] || res.socket.remoteAddress;
             if (serverCode != userCode) {
-                console.log(
-                    "CHCKED: " +
-                        ip +
-                        " - " +
-                        res.query.id +
-                        " - " +
-                        now() +
-                        " - " +
-                        false
-                );
+                logger.warn({
+                    event: "User entered wrong code",
+                    user: res.query.id,
+                    ip: ip,
+                });
+                req.statusCode = 401;
+                req.statusMessage = "Unauthorized";
                 const xssFilters = require("xss-filters");
                 return req.send({
                     id: xssFilters.inHTMLData(res.query.id),
                     status: false,
                 });
             } else {
-                console.log(
-                    "CHCKED: " +
-                        ip +
-                        " - " +
-                        res.query.id +
-                        " - " +
-                        now() +
-                        " - " +
-                        true
-                );
-                return req.send({ id: res.query.id, status: true });
+                logger.info({
+                    event: "User entered correct code",
+                    user: res.query.id,
+                    ip: ip,
+                });
+                req.statusCode = 200;
+                req.statusMessage = "OK";
+                const xssFilters = require("xss-filters");
+                return req.send({
+                    id: xssFilters.inHTMLData(res.query.id),
+                    status: true,
+                });
             }
         })
         .catch((error) => {
             req.statusCode = 500;
             req.statusMessage = "Database Error";
-            return console.error(error);
+            logger.error({
+                error: error,
+                event: "Database error when checking code.",
+                user: res.query.id,
+                ip: ip,
+            });
+            return;
         });
 }); // check
 
