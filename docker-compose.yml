@@ -9,7 +9,6 @@ services:
         links:
             - mongo
         volumes:
-            - ./data:/data
             - ./logs:/logs
         env_file: ././.env
     mongo:

@@ -8,7 +8,6 @@ const app = express();
 const authenticator = require("@otplib/preset-default");
 const qr = require("qrcode");
 const { encrypt, decrypt, sha256 } = require("./controllers/crypto");
-const now = require("./controllers/now");
 const isValidID = require("./controllers/pbik-validator");
 
 // Set up environment variables
@@ -43,7 +42,7 @@ const logger = new woodlotCustomLogger({
     format: {
         type: "json",
         options: {
-            compact: false,
+            compact: true,
         },
     },
 });
@@ -116,7 +115,7 @@ app.post("/", async (res, req) => {
         const authenticate = require("ldap-authentication");
         user = await authenticate(options);
     } catch (error) {
-        logger.error({ error: error, event: "LDAP authentication failed" });
+        logger.err({ error: error, event: "LDAP authentication failed" });
         req.render("login", { message: "Kullanıcı adı veya parola hatalı." });
         return;
     }
@@ -181,7 +180,7 @@ app.post("/create", (req, res) => {
             })
         )
         .catch((error) =>
-            logger.error({
+            logger.err({
                 error: error,
                 event: "Database error when update or setting.",
                 user: user,
@@ -239,7 +238,7 @@ app.get("/api/check", (res, req) => {
         .catch((error) => {
             req.statusCode = 500;
             req.statusMessage = "Database Error";
-            logger.error({
+            logger.err({
                 error: error,
                 event: "Database error when checking code.",
                 user: res.query.id,
